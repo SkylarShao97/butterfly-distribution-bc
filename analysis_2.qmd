@@ -1,6 +1,6 @@
 ---
-title: "analysis"
-author: "JingranZhao"
+title: "Spatial Project - Butterfly in BC"
+author: "Jingran Zhao, Skylar Shao, Yuzhu Han"
 format: html
 editor: visual
 editor_options: 
