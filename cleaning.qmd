@@ -1,0 +1,90 @@
+---
+title: "project"
+author: "JingranZhao"
+format: pdf
+editor: visual
+---
+
+Load the data:
+
+BC_data:
+
+```{r}
+load("BC_Covariates.Rda")
+```
+
+Neophasia menapia data:
+
+```{r}
+library(rgbif)
+
+
+result <- occ_search(
+  scientificName = "Neophasia menapia",
+  country = "CA",                
+  continent = "NORTH_AMERICA",  
+  year = "1000,2025",  
+  stateProvince = "British Columbia" ,
+  limit = 2000                    
+)
+
+#head(result$data
+#colnames(result$data)
+
+write.csv(result$data, "Neophasia_menapia_Canada.csv", row.names = FALSE)
+
+```
+
+describe the data:
+
+BC_data:
+
+```{r}
+names(DATA)
+class(DATA$Window)
+class(DATA$Elevation)
+class(DATA$Forest)
+class(DATA$HFI)
+class(DATA$Dist_Water)
+```
+
+clean and show Neophasia menapia data:
+
+```{r}
+library(readr)
+library(dplyr)
+library(sf)
+df <- read.csv("Neophasia_menapia_Canada.csv")
+df_clean <- df %>%
+  select(decimalLatitude, decimalLongitude, coordinateUncertaintyInMeters,
+         stateProvince, country, continent,
+         year, month, day, eventDate,
+         scientificName, kingdom, phylum, order, family, genus, species, taxonRank,
+         recordedBy, identifiedBy, datasetName, publishingCountry,
+         basisOfRecord, occurrenceStatus, issues)
+
+df_clean <- df_clean %>%
+  filter(is.na(coordinateUncertaintyInMeters) | coordinateUncertaintyInMeters <= 1000)
+df_clean<- df_clean[!is.na(df_clean$decimalLongitude) & !is.na(df_clean$decimalLatitude), ]
+# Convert df_clean to an sf object, specifying the coordinate columns (decimalLongitude, decimalLatitude)
+
+df_sf <- st_as_sf(df_clean, coords = c("decimalLongitude", "decimalLatitude"), crs = 4326, agr = "constant")
+
+df_sf_utm <- st_transform(df_sf, crs = 3005) 
+
+# Extract the transformed UTM coordinates (utm_x and utm_y)
+coordinates <- st_coordinates(df_sf_utm)
+
+# Add the UTM X and Y coordinates as new columns
+df_clean_utm <- df_sf_utm %>%
+  mutate(utm_x = coordinates[, 1],  # Extract UTM X coordinate
+         utm_y = coordinates[, 2])  # Extract UTM Y coordinate
+
+df_clean_utm <- st_drop_geometry(df_clean_utm)
+
+# Check the resulting data frame
+glimpse(df_clean_utm)
+
+# Save the transformed data with UTM coordinates as a CSV file
+write.csv(df_clean_utm, "clean_data_utm.csv", row.names = FALSE)
+```

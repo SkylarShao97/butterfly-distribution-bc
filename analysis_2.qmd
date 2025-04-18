@@ -1,0 +1,738 @@
+---
+title: "analysis"
+author: "JingranZhao"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: inline
+---
+
+# Data loading
+
+```{r}
+load("BC_Covariates.rda")
+data <- read.csv("clean_data_utm.csv")
+```
+
+# Exploratory Analysis:
+
+## Convert to `ppp` object
+
+```{r}
+library(spatstat)
+library(sf)
+window_sf <- st_as_sf(DATA$Window)
+window_owin <- as.owin(window_sf)
+data_ppp <- ppp(x =data$utm_x, y = data$utm_y, window = window_owin)
+data_ppp_clean <- data_ppp[!duplicated(data_ppp$x) & !duplicated(data_ppp$y), ]
+
+data_ppp_clean <- data_ppp_clean[data_ppp_clean$window]
+
+plot(data_ppp_clean,
+     col = "grey70", 
+     pch = 16,
+     cex = 0.6,
+     cols = 'blue',
+     legend = T)
+```
+
+## Visualization
+
+```{r}
+plot(DATA$Forest, 
+     main = "BC Forest")
+
+plot(data_ppp_clean,
+pch = 16,
+cex = 0.6,
+col = 'green',
+add = TRUE)
+
+```
+
+```{r}
+plot(DATA$Elevation, 
+     main = "BC Elevation")
+
+plot(data_ppp_clean,
+pch = 16,
+cex = 0.6,
+col = 'green',
+add = TRUE)
+```
+
+```{r}
+plot(DATA$HFI, 
+     main = "BC HFI")
+
+plot(data_ppp_clean,
+pch = 16,
+cex = 0.6,
+col = 'green',
+add = TRUE)
+```
+
+```{r}
+plot(DATA$Dist_Water, 
+     main = "BC Dist of Water")
+
+plot(data_ppp_clean,
+pch = 16,
+cex = 0.4,
+col = 'green',
+add = TRUE)
+```
+
+## Perspective plot
+
+```{r}
+M <- persp(DATA$Elevation, 
+           colmap = terrain.colors(100),
+           theta = 45,
+           phi = 30,
+           shade = 0.6,
+           expand = 10,
+           xlab = "Longitude",
+           ylab = "Latitude",
+           zlab = "Elevation",
+           ticktype = "detailed",
+           border = NA,
+           ltheta = 120,
+           cex.lab = 1.2,
+           cex.axis = 1.1,
+           cex.main = 1.5,
+           visible = TRUE)
+
+perspPoints(x = data_ppp_clean$x, 
+            y = data_ppp_clean$y, 
+            Z = DATA$Elevation,  
+            M = M,
+            pch = 16,
+            cex = 0.5)
+
+```
+
+```{r}
+library(viridis)
+library(fields)
+M_forest <- persp(DATA$Forest, 
+                  colmap = viridis(100),
+                  theta = 45, phi = 30,
+                  expand = 10,
+                  shade = 0.5,
+                  xlab = "Longitude", 
+                  ylab = "Latitude", 
+                  zlab = "Forest Cover",
+                  visible = TRUE)
+
+perspPoints(x = data_ppp_clean$x, 
+            y = data_ppp_clean$y, 
+            Z = DATA$Forest,  
+            M = M_forest,
+            pch = 16, cex = 0.5)
+
+image.plot(legend.only = TRUE, 
+           zlim = range(DATA$Forest, na.rm = TRUE),   
+           col = viridis(100),    
+           legend.lab = "Forest Cover (%)")  
+
+```
+
+```{r}
+M_hfi <- persp(DATA$HFI, 
+               colmap = magma(100),
+               theta = 45, phi = 30,
+               expand = 10,
+               shade = 0.5,
+               xlab = "Longitude", 
+               ylab = "Latitude", 
+               zlab = "Human Footprint",
+               visible = TRUE)
+
+perspPoints(x = data_ppp_clean$x, 
+            y = data_ppp_clean$y, 
+            Z = DATA$HFI,  
+            M = M_hfi,
+            pch = 16, cex = 0.5)
+image.plot(legend.only = TRUE, 
+           zlim = range(DATA$HFI, na.rm = TRUE),   
+           col = magma(100),    
+           legend.lab = "Human Footprint")  
+```
+
+```{r}
+M_water <- persp(DATA$Dist_Water, 
+                 colmap = cividis(100),
+                 theta = 45, phi = 30,
+                 expand = 5,
+                 shade = 0.5,
+                 xlab = "Longitude", 
+                 ylab = "Latitude", 
+                 zlab = "Distance to Water",
+                 visible = TRUE)
+
+perspPoints(x = data_ppp_clean$x, 
+            y = data_ppp_clean$y, 
+            Z = DATA$Dist_Water,  
+            M = M_water,
+            pch = 16, cex = 0.5)
+image.plot(legend.only = TRUE, 
+           zlim = range(DATA$Dist_Water, na.rm = TRUE),   
+           col = cividis(100),    
+           legend.lab = "Distance to Water")  
+```
+
+## Categorization with Summary Table
+
+1.  Elevation
+
+```{r}
+elev_classes <- cut(DATA$Elevation,
+breaks = 5,
+labels = c("Very Low", "Low", "Medium", "High", "Very High"))
+
+plot(elev_classes,
+     main = "Elevation Classes (5 levels) with Butterfly Locations")
+
+plot(data_ppp_clean,
+     pch = 16,
+     cex = 0.4,
+     col='green',
+     add = TRUE)
+```
+
+```{r}
+butterfly_elev_class <- elev_classes[data_ppp_clean]
+
+table(butterfly_elev_class)
+```
+
+2.  Forest
+
+```{r}
+forest_classes <- cut(DATA$Forest,
+breaks = 5,
+labels = c("Very Low", "Low", "Medium", "High", "Very High"))
+
+plot(forest_classes,
+     main = "Forest Classes (5 levels) with Butterfly Locations")
+
+plot(data_ppp_clean,
+     pch = 16,
+     cex = 0.4,
+     col='green',
+     add = TRUE)
+```
+
+```{r}
+butterfly_forest_class <- forest_classes[data_ppp_clean]
+
+table(butterfly_forest_class)
+```
+
+3.  HFI
+
+```{r}
+hfi_classes <- cut(DATA$HFI,
+breaks = 5,
+labels = c("Very Low", "Low", "Medium", "High", "Very High"))
+
+plot(hfi_classes,
+     main = "HFI Classes (5 levels) with Butterfly Locations")
+
+plot(data_ppp_clean,
+     pch = 16,
+     cex = 0.4,
+     col='green',
+     add = TRUE)
+```
+
+```{r}
+butterfly_hfi_class <- hfi_classes[data_ppp_clean]
+
+table(butterfly_hfi_class)
+```
+
+4.  Dist of Water
+
+```{r}
+water_classes <- cut(DATA$Dist_Water,
+breaks = 5,
+labels = c("Very Low", "Low", "Medium", "High", "Very High"))
+
+plot(water_classes,
+     main = "Dist of Water Classes (5 levels) with Butterfly Locations")
+
+plot(data_ppp_clean,
+     pch = 16,
+     cex = 0.4,
+     col='green',
+     add = TRUE)
+```
+
+```{r}
+butterfly_water_class <- water_classes[data_ppp_clean]
+
+table(butterfly_water_class)
+```
+
+## Distance
+
+```{r}
+m <- data.frame(butterfly = data_ppp_clean)
+
+m$Dist <- nndist(data_ppp_clean)
+
+marks(data_ppp_clean) <- m
+
+options(scipen=9999999)
+plot(data_ppp_clean, which.marks = "Dist")
+```
+
+## KDE
+
+1.  Elevation
+
+```{r}
+library(ks)
+
+elev_all <- lookup.im(DATA$Elevation, x = coords(data_ppp_clean)[,1], y = coords(data_ppp_clean)[,2])
+kde_butterfly <- density(elev_all, na.rm = T)
+```
+
+```{r}
+elev_pro <- as.vector(DATA$Elevation$v)
+kde_elev <- density(elev_pro, na.rm = T)
+
+plot(kde_elev,
+     main = "Elevation KDE in BC and Butterflies",
+     xlab = "Elevation",
+     ylab = "Density",
+     col = "blue",
+     lwd = 2)
+
+# Butterflies
+lines(kde_butterfly,
+      col = "green",
+      lwd = 2)
+
+# legend
+legend("topright",
+       legend = c("Elevation", "Butterflies"),
+       col = c("blue", "green"),
+       lty = c(1, 1),
+       lwd = 2)
+```
+
+2.  Forest
+
+```{r}
+forest_pro <- as.vector(DATA$Forest$v)
+kde_forest <- density(forest_pro, na.rm = T)
+
+plot(kde_forest,
+     main = "Forest KDE in BC and Butterflies",
+     xlab = "Forest",
+     ylab = "Density",
+     col = "blue",
+     lwd = 2)
+
+# Butterflies
+lines(kde_butterfly,
+      col = "green",
+      lwd = 2)
+
+# legend
+legend("topright",
+       legend = c("Forest", "Butterflies"),
+       col = c("blue", "green"),
+       lty = c(1, 1),
+       lwd = 2)
+
+```
+
+3.  HFI
+
+```{r}
+hfi_pro <- as.vector(DATA$HFI$v)
+kde_hfi <- density(hfi_pro, na.rm = T)
+
+plot(kde_hfi,
+     main = "HFI KDE in BC and Butterflies",
+     xlab = "HFI",
+     ylab = "Density",
+     col = "blue",
+     lwd = 2)
+
+# Butterflies
+lines(kde_butterfly,
+      col = "green",
+      lwd = 2)
+
+# legend
+legend("topright",
+       legend = c("HFI", "Butterflies"),
+       col = c("blue", "green"),
+       lty = c(1, 1),
+       lwd = 2)
+```
+
+4.  Water
+
+```{r}
+water_pro <- as.vector(DATA$Dist_Water$v)
+kde_water <- density(water_pro, na.rm = T)
+
+plot(kde_water,
+     main = "Dist of Water KDE in BC and Butterflies",
+     xlab = "Dist of Water",
+     ylab = "Density",
+     col = "blue",
+     lwd = 2)
+
+# Butterflies
+lines(kde_butterfly,
+      col = "green",
+      lwd = 2)
+
+# legend
+legend("topright",
+       legend = c("Dist of Water", "Butterflies"),
+       col = c("blue", "green"),
+       lty = c(1, 1),
+       lwd = 2)
+```
+
+## Quadrats
+
+```{r}
+library(ggplot2)
+#Split into a 10 by 10 quadrat and count points
+Q <- quadratcount(data_ppp_clean,
+                  nx = 10,
+                  ny = 10)
+quadrat.test(Q)
+```
+
+```{r}
+data_ppp_clean_unmark <- unmark(data_ppp_clean)
+plot(data_ppp_clean_unmark,
+     pch = 16,
+     cex = 0.5,
+     cols = "#046C9A",
+     main = "BC Butterfly",
+     which.marks = FALSE)
+
+plot(Q, cex = 1, col = "red", add = TRUE)
+```
+
+-   Intensity
+
+```{r}
+plot(intensity(Q, image = T),
+     main = "")
+
+plot(data_ppp_clean_unmark,
+     pch = 16,
+     cex = 0.6,
+     cols = "white",
+     add = T)
+
+plot(data_ppp_clean_unmark,
+     pch = 16,
+     cex = 0.5,
+     cols = "black",
+     add = T)
+```
+
+## Kernel Estimation
+
+```{r}
+plot(density(data_ppp_clean_unmark),
+     #ribbon = F,
+     main = "Kernel Estimate")
+
+plot(data_ppp_clean_unmark,
+     pch = 16,
+     cex = 0.8,
+     cols = "white",
+     add = T)
+
+plot(data_ppp_clean_unmark,
+pch = 16,
+cex = 0.6,
+cols = "black",
+add = T)
+```
+
+### Hot Spot Analysis
+
+```{r}
+R <- bw.diggle(data_ppp_clean_unmark)
+LR <- scanLRTS(data_ppp_clean_unmark, r = R)
+
+plot(LR)
+plot(data_ppp_clean$window, add = TRUE, border = "white")
+```
+
+## Relationships with covariates
+
+1.  Elevation
+
+```{r}
+#Extract elevation information
+elev <- DATA$Elevation
+
+#define quartiles
+b <- quantile(elev, probs = (0:4)/4, type = 2)
+
+#Split image into 4 equal-area quadrats based on elevation values
+Zcut <- cut(elev, breaks = b)
+V <- tess(image = Zcut)
+
+#Count points in each quadrate
+quadratcount(data_ppp_clean_unmark, tess = V)
+rho_elev <- rhohat(data_ppp_clean_unmark, elev)
+
+plot(rho_elev, xlim = c(0, max(rho_elev$elev)))
+```
+
+2.  Forest
+
+```{r}
+forest <- DATA$Forest
+
+#define quartiles
+b <- quantile(forest, probs = (0:4)/4, type = 2)
+
+#Split image into 4 equal-area quadrats based on elevation values
+Zcut <- cut(forest, breaks = b)
+V <- tess(image = Zcut)
+
+#Count points in each quadrate
+quadratcount(data_ppp_clean_unmark, tess = V)
+rho_forest <- rhohat(data_ppp_clean_unmark, forest)
+
+plot(rho_forest, xlim = c(0, max(rho_forest$forest)))
+```
+
+3.  HFI
+
+```{r}
+HFI <- DATA$HFI
+
+#define quartiles
+b <- quantile(HFI, probs = (0:4)/4, type = 2)
+
+#Split image into 4 equal-area quadrats based on elevation values
+Zcut <- cut(HFI, breaks = b)
+V <- tess(image = Zcut)
+
+#Count points in each quadrate
+quadratcount(data_ppp_clean_unmark, tess = V)
+rho_hfi <- rhohat(data_ppp_clean_unmark,HFI)
+
+plot(rho_hfi, xlim = c(0, max(rho_hfi$HFI)))
+```
+
+4.  Water
+
+```{r}
+water <- DATA$Dist_Water
+
+#define quartiles
+b <- quantile(water, probs = (0:4)/4, type = 2)
+
+#Split image into 4 equal-area quadrats based on elevation values
+Zcut <- cut(water, breaks = b)
+V <- tess(image = Zcut)
+
+#Count points in each quadrate
+quadratcount(data_ppp_clean_unmark, tess = V)
+rho_water <- rhohat(data_ppp_clean_unmark,water)
+
+plot(rho_water)
+```
+
+## Ripley’s K-function
+
+```{r}
+k <- Kest(data_ppp_clean)
+plot(k,
+main = "",
+lwd = 2)
+```
+
+## Pair Correlation Function
+
+-   homogeneous and inhomogeneous
+
+```{r}
+pcf_data <- pcf(data_ppp_clean)
+g_inhom <- pcfinhom(data_ppp_clean)
+lambda_data_pos <- density(data_ppp_clean,
+sigma=bw.ppl,
+positive=TRUE)
+pcf_data_hom <- envelope(data_ppp_clean,
+pcf,
+nsim = 19)
+
+pcf_data_inhom <- envelope(data_ppp_clean,
+pcfinhom,
+simulate = expression(rpoispp(lambda_data_pos)),
+nsim = 19)
+
+plot(pcf_data,
+theo ~ r,
+ylim = c(0,20),
+main = "",
+col = "grey70",
+lwd = 2,
+lty = "dashed")
+plot(pcf_data,
+iso ~ r,
+col = c("#046C9A"),
+lwd = 2,
+add = T)
+plot(g_inhom,
+theo ~ r,
+ylim = c(0,9),
+main = "",
+col = "grey70",
+lwd = 2,
+lty = "dashed")
+plot(g_inhom,
+iso ~ r,
+col = c("#046C9A"),
+lwd = 2,
+add = T)
+plot(pcf_data_hom)
+plot(pcf_data_inhom)
+```
+
+# Poisson Point Process Models
+
+## Correlation
+
+```{r}
+correlation <- cor.im(elev, forest,HFI, water, use = "pairwise.complete.obs")
+correlation
+```
+
+## Model Fitting
+
+```{r}
+covariates <- harmonise.im(elev = elev, HFI = HFI)
+elev_harmonised <- covariates$elev
+HFI_harmonised  <- covariates$HFI
+
+# Extract both covariate values at all points (including NA)
+elev_vals <- elev_harmonised[data_ppp_clean_unmark, drop=FALSE]
+hfi_vals  <- HFI_harmonised[data_ppp_clean_unmark, drop=FALSE]
+
+# Now drop only those rows with NA in either column
+good <- !is.na(elev_vals) & !is.na(hfi_vals)
+
+# Subset the point pattern
+data_ppp_clean_noNA <- data_ppp_clean_unmark[good]
+
+```
+
+```{r}
+elev_vals <- elev_harmonised[data_ppp_clean_unmark]
+hfi_vals  <- HFI_harmonised[data_ppp_clean_unmark]
+length(elev_vals); length(hfi_vals)
+```
+
+```{r}
+elev_im <- as.im(DATA$Elevation)
+forest_rs <- as.im(forest_im, W = elev_im)
+hfi_rs    <- as.im(hfi_im, W = elev_im)
+water_rs  <- as.im(water_im, W = elev_im)
+
+W <- intersect.owin(Window(elev_im), Window(forest_rs))
+W <- intersect.owin(W, Window(hfi_rs))
+W <- intersect.owin(W, Window(water_rs))
+
+elev_crop   <- elev_im[W, drop = FALSE]
+forest_crop <- forest_rs[W, drop = FALSE]
+hfi_crop    <- hfi_rs[W, drop = FALSE]
+water_crop  <- water_rs[W, drop = FALSE]
+
+valid_mask_matrix <- !is.na(elev_crop$v) & !is.na(forest_crop$v) & 
+                     !is.na(hfi_crop$v) & !is.na(water_crop$v)
+
+valid_mask_im <- im(valid_mask_matrix, 
+                    xcol = elev_crop$xcol, 
+                    yrow = elev_crop$yrow)
+
+```
+
+```{r}
+fit_simple <- ppm(data_ppp_clean_unmark ~ elev + forest + HFI + water)
+
+fit_simple
+```
+
+```{r}
+fit_reduced <- ppm(data_ppp_clean_unmark ~ elev + forest + HFI)
+
+fit_reduced
+```
+
+```{r}
+fit_quad <- ppm(data_ppp_clean_unmark ~ elev + I(elev^2) + forest + I(forest^2) + HFI)
+
+fit_quad
+```
+
+```{r}
+elev_std <- eval.im((elev_im - mean(elev_im)) / sd(elev_im))
+forest_std <- eval.im((forest_rs - mean(forest_rs)) / sd(forest_rs))
+hfi_std <- eval.im((hfi_rs - mean(hfi_rs)) / sd(hfi_rs))
+water_std <- eval.im((water_rs - mean(water_rs)) / sd(water_rs))
+
+```
+
+```{r}
+elev2 <- eval.im(elev_std^2)
+forest2 <- eval.im(forest_std^2)
+hfi2 <- eval.im(hfi_std^2)
+water2 <- eval.im(water_std^2)
+
+```
+
+```{r}
+fit_best <- ppm(data_ppp_clean_unmark ~ elev + forest + I(forest^2) + HFI)
+
+fit_best
+
+```
+
+```{r}
+fit_null <- ppm(data_ppp_clean_unmark ~ 1)
+
+fit_null
+```
+
+```{r}
+#Plot the model predictions
+plot(fit_best,
+     se = FALSE,
+     superimpose = FALSE)
+
+plot(data_ppp_clean_unmark,
+     pch = 16,
+     cex = 0.6,
+     cols = "white",
+     add = TRUE)
+plot(data_ppp_clean_unmark,
+     pch = 16,
+     cex = 0.5,
+     cols = "black",
+     add = TRUE)
+```
+
+```{r}
+plot(predict(fit_best))
+```
