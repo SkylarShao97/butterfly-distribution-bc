@@ -113,6 +113,41 @@ perspPoints(x = data_ppp_clean$x,
 ```
 
 ```{r}
+library(spatstat)
+library(rgl)  
+
+M <- persp(DATA$Elevation,
+           colmap = terrain.colors(100),
+           theta = 40,               
+           phi = 35,
+           shade = 0.5,
+           expand = 8,
+           xlab = "Longitude",
+           ylab = "Latitude",
+           zlab = "Elevation (m)",
+           ticktype = "simple",      
+           border = NA,
+           ltheta = 120,
+           cex.lab = 1.4,            
+           cex.axis = 1.2,
+           cex.main = 1.6,
+           main = "Neophasia menapia Distribution over Elevation")
+
+perspPoints(x = data_ppp_clean$x,
+            y = data_ppp_clean$y,
+            Z = DATA$Elevation,
+            M = M,
+            pch = 21,
+            col = "black",
+            bg = "orange",          
+            cex = 0.7)
+
+legend("topright", legend = "Butterfly Observations",
+       pch = 21, pt.bg = "orange", col = "black", bty = "n")
+
+```
+
+```{r}
 library(viridis)
 library(fields)
 M_forest <- persp(DATA$Forest, 
@@ -164,7 +199,7 @@ image.plot(legend.only = TRUE,
 M_water <- persp(DATA$Dist_Water, 
                  colmap = cividis(100),
                  theta = 45, phi = 30,
-                 expand = 5,
+                 expand = 0.5,
                  shade = 0.5,
                  xlab = "Longitude", 
                  ylab = "Latitude", 
@@ -646,6 +681,11 @@ length(elev_vals); length(hfi_vals)
 
 ```{r}
 elev_im <- as.im(DATA$Elevation)
+elev_im <- as.im(DATA$Elevation)
+forest_im <- as.im(DATA$Forest)
+hfi_im <- as.im(DATA$HFI)
+water_im <- as.im(DATA$Dist_Water)
+
 forest_rs <- as.im(forest_im, W = elev_im)
 hfi_rs    <- as.im(hfi_im, W = elev_im)
 water_rs  <- as.im(water_im, W = elev_im)
@@ -703,6 +743,12 @@ water2 <- eval.im(water_std^2)
 ```
 
 ```{r}
+fit_best_2 <- ppm(data_ppp_clean_unmark ~ elev + forest + I(forest^2) + HFI + I(HFI^2))
+
+fit_best_2
+```
+
+```{r}
 fit_best <- ppm(data_ppp_clean_unmark ~ elev + forest + I(forest^2) + HFI)
 
 fit_best
@@ -735,4 +781,28 @@ plot(data_ppp_clean_unmark,
 
 ```{r}
 plot(predict(fit_best))
+```
+
+```{r}
+AIC(fit_best)
+```
+
+```{r}
+AIC(fit_best_2)
+```
+
+```{r}
+AIC(fit_quad)
+```
+
+```{r}
+AIC(fit_simple)
+```
+
+```{r}
+AIC(fit_reduced)
+```
+
+```{r}
+AIC(fit_null)
 ```
