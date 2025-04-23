@@ -1,19 +1,19 @@
 ---
-title: "project"
-author: "JingranZhao"
+title: "DATA589 Project - data preprocess"
+author: "Jingran Zhao, Yuzhu Han, Skylar Shao"
 format: pdf
 editor: visual
 ---
 
-Load the data:
+# Load the data:
 
-BC_data:
+- BC_data:
 
 ```{r}
 load("BC_Covariates.Rda")
 ```
 
-Neophasia menapia data:
+- Neophasia menapia data:
 
 ```{r}
 library(rgbif)
@@ -35,20 +35,7 @@ write.csv(result$data, "Neophasia_menapia_Canada.csv", row.names = FALSE)
 
 ```
 
-describe the data:
-
-BC_data:
-
-```{r}
-names(DATA)
-class(DATA$Window)
-class(DATA$Elevation)
-class(DATA$Forest)
-class(DATA$HFI)
-class(DATA$Dist_Water)
-```
-
-clean and show Neophasia menapia data:
+# Clean and convert the coordinates of Neophasia menapia data
 
 ```{r}
 library(readr)
