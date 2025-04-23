@@ -1,5 +1,5 @@
 ---
-title: "Spatial Project - Butterfly in BC"
+title: "DATA589 Spatial Project - Pine White Butterfly in BC"
 author: "Jingran Zhao, Skylar Shao, Yuzhu Han"
 format: html
 editor: visual
@@ -438,7 +438,9 @@ legend("topright",
        lwd = 2)
 ```
 
-## Quadrats
+## Quadrats & Intensity
+
+-   Quadrats
 
 ```{r}
 library(ggplot2)
@@ -591,14 +593,15 @@ plot(rho_water)
 
 ## Ripley’s K-function
 
+-   inhomogeneous K Function plot
+
 ```{r}
-k <- Kest(data_ppp_clean)
-plot(k,
-main = "",
-lwd = 2)
+lambda_est <- density(data_ppp_clean)
+k_inhom <- Kinhom(data_ppp_clean, lambda=lambda_est)
+plot(k_inhom)
 ```
 
-## Pair Correlation Function
+## Pair Correlation Function ()
 
 -   homogeneous and inhomogeneous
 
@@ -673,87 +676,7 @@ data_ppp_clean_noNA <- data_ppp_clean_unmark[good]
 
 ```
 
-```{r}
-elev_vals <- elev_harmonised[data_ppp_clean_unmark]
-hfi_vals  <- HFI_harmonised[data_ppp_clean_unmark]
-length(elev_vals); length(hfi_vals)
-```
-
-```{r}
-elev_im <- as.im(DATA$Elevation)
-elev_im <- as.im(DATA$Elevation)
-forest_im <- as.im(DATA$Forest)
-hfi_im <- as.im(DATA$HFI)
-water_im <- as.im(DATA$Dist_Water)
-
-forest_rs <- as.im(forest_im, W = elev_im)
-hfi_rs    <- as.im(hfi_im, W = elev_im)
-water_rs  <- as.im(water_im, W = elev_im)
-
-W <- intersect.owin(Window(elev_im), Window(forest_rs))
-W <- intersect.owin(W, Window(hfi_rs))
-W <- intersect.owin(W, Window(water_rs))
-
-elev_crop   <- elev_im[W, drop = FALSE]
-forest_crop <- forest_rs[W, drop = FALSE]
-hfi_crop    <- hfi_rs[W, drop = FALSE]
-water_crop  <- water_rs[W, drop = FALSE]
-
-valid_mask_matrix <- !is.na(elev_crop$v) & !is.na(forest_crop$v) & 
-                     !is.na(hfi_crop$v) & !is.na(water_crop$v)
-
-valid_mask_im <- im(valid_mask_matrix, 
-                    xcol = elev_crop$xcol, 
-                    yrow = elev_crop$yrow)
-
-```
-
-```{r}
-fit_simple <- ppm(data_ppp_clean_unmark ~ elev + forest + HFI + water)
-
-fit_simple
-```
-
-```{r}
-fit_reduced <- ppm(data_ppp_clean_unmark ~ elev + forest + HFI)
-
-fit_reduced
-```
-
-```{r}
-fit_quad <- ppm(data_ppp_clean_unmark ~ elev + I(elev^2) + forest + I(forest^2) + HFI)
-
-fit_quad
-```
-
-```{r}
-elev_std <- eval.im((elev_im - mean(elev_im)) / sd(elev_im))
-forest_std <- eval.im((forest_rs - mean(forest_rs)) / sd(forest_rs))
-hfi_std <- eval.im((hfi_rs - mean(hfi_rs)) / sd(hfi_rs))
-water_std <- eval.im((water_rs - mean(water_rs)) / sd(water_rs))
-
-```
-
-```{r}
-elev2 <- eval.im(elev_std^2)
-forest2 <- eval.im(forest_std^2)
-hfi2 <- eval.im(hfi_std^2)
-water2 <- eval.im(water_std^2)
-
-```
-
-```{r}
-fit_best_2 <- ppm(data_ppp_clean_unmark ~ elev + forest + I(forest^2) + HFI + I(HFI^2))
-
-fit_best_2
-```
-
-```{r}
-fit_best <- ppm(data_ppp_clean_unmark ~ elev + forest + I(forest^2) + HFI)
-
-fit_best
-
-```
+-   Null model
 
 ```{r}
 fit_null <- ppm(data_ppp_clean_unmark ~ 1)
@@ -761,8 +684,52 @@ fit_null <- ppm(data_ppp_clean_unmark ~ 1)
 fit_null
 ```
 
+-   Linear model
+
 ```{r}
-#Plot the model predictions
+fit_simple <- ppm(data_ppp_clean_unmark ~ elev + forest + HFI + water)
+
+fit_simple
+```
+
+-   Quadratic model
+
+```{r}
+fit_quad <- ppm(data_ppp_clean_unmark ~ elev + I(elev^2) + forest + I(forest^2) + HFI)
+
+fit_quad
+```
+
+-   Best model
+
+```{r}
+fit_best <- ppm(data_ppp_clean_unmark ~ elev + water + forest + I(forest^2) + HFI + I(HFI^2))
+
+fit_best
+```
+
+#### AIC - model evaluation
+
+```{r}
+AIC(fit_null)
+```
+
+```{r}
+AIC(fit_simple)
+```
+
+```{r}
+AIC(fit_quad)
+```
+
+```{r}
+AIC(fit_best)
+```
+
+#### Model plots
+
+```{r}
+#Plot the fitted model 
 plot(fit_best,
      se = FALSE,
      superimpose = FALSE)
@@ -780,29 +747,6 @@ plot(data_ppp_clean_unmark,
 ```
 
 ```{r}
+#Plot the predict value
 plot(predict(fit_best))
-```
-
-```{r}
-AIC(fit_best)
-```
-
-```{r}
-AIC(fit_best_2)
-```
-
-```{r}
-AIC(fit_quad)
-```
-
-```{r}
-AIC(fit_simple)
-```
-
-```{r}
-AIC(fit_reduced)
-```
-
-```{r}
-AIC(fit_null)
 ```
